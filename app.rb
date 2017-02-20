@@ -5,15 +5,48 @@ require 'sinatra/activerecord'
 # Require models
 Dir["#{Dir.pwd}/models/*.rb"].each { |file| require file }
 
+####### CONFIG #######
+set :port, 8080
 ######################
-get '/' do
-  content_type :json
-  @users = User.all
-  p @users
-  @claims = Claim.all
-  @payment = Payment.all
-  @claims.to_json
+
+before do
+  ## JQuery ei luba muidu datat lugeda
+  headers 'Access-Control-Allow-Origin' => '*'
 end
+
+error do
+  {}.to_json
+end
+
+get '/laekumised.json' do
+  content_type :json
+  json = {}
+  User.all.each do |u|
+    puts u.laekumiste_summa
+    json[u.callsign] = u.laekumiste_summa
+  end
+  json.to_json
+end
+
+get '/users.json' do
+  content_type :json
+  json = {}
+  User.all.each do |u|
+    json[u.id] = u.name
+  end
+  json.to_json
+end
+
+get '/nouded/:tegeleja' do
+  content_type :json
+  json = {}
+  user = User.find(params[:tegeleja])
+  user.claims.each do |u|
+    json[u.id] = u.viitenumber
+  end
+  json.to_json
+end
+
 
 get '/users/:callsign' do
   content_type :json
@@ -22,20 +55,22 @@ get '/users/:callsign' do
 end
 
 post '/users' do
-  puts params
   if params[:user]
     @user = User.create(params[:user])
   end
 end
 
 post '/claims' do
-  puts params
-  @user = Claim.create(params[:claim])
+  if params[:claim]
+    @claim = Claim.create(params[:claim])
+  end
 end
 
 post '/payments' do
-  puts params
-  @user = Payment.create(params[:payment])
+  p params
+  if params[:payment]
+    @payment = Payment.create(params[:payment])
+  end
 end
 
 #test
